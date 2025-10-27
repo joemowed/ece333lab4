@@ -102,7 +102,11 @@ def IdvsVds(
     CH2Off()
     setCH2(Vds_start, ID_CURRENT_MAX)  # Vds on channel 2
     setCH1(Vgs_list[0], 0.1)  # Vgs channel 1
-    data = [("Vgs", "Igs", "Vds", "Ids")]
+    header = []
+    for Vgs_voltage in Vgs_list:
+        header.append(f"Vgs_{Vgs_voltage}")
+        header.append(f"Ids_{Vgs_voltage}")
+    data = [tuple(header)]
     CH1On()
     CH2On()
     wait()
@@ -110,23 +114,17 @@ def IdvsVds(
     wait()
     wait()
     wait()
-    for Vgs_voltage in Vgs_list:
-        current_history = [0, 0]
-        setCH1(Vgs_voltage, 0.1)
-        wait()
-        for Vds_voltage in np.arange(Vds_start, Vds_stop, Vds_step_size):
-            Vds_voltage = float(Vds_voltage)
-            if (current_history[0] >= ID_CURRENT_SAT) and (
-                current_history[1] >= ID_CURRENT_SAT
-            ):
-                data.append((Vgs_voltage, "0", Vds_voltage, ID_CURRENT_MAX))
-            else:
-                setCH2(Vds_voltage, ID_CURRENT_MAX)
-                wait()
-                Vgs, Igs, Vds, Ids = readAll()
-                current_history[0] = current_history[1]
-                current_history[1] = Ids
-                data.append((Vgs, Igs, Vds, Ids))
+    for Vds_voltage in np.arange(Vds_start, Vds_stop, Vds_step_size):
+        setCH1(0, 0.1)
+        setCH2(Vds_voltage, ID_CURRENT_MAX)
+        line = []
+        for Vgs_voltage in Vgs_list:
+            setCH1(Vgs_voltage, 0.1)
+            wait()
+            Vgs, Igs, Vds, Ids = readAll()
+            line.append(Vgs)
+            line.append(Ids)
+        data.append(line)
 
     print(data)
     CH1Off()
@@ -159,7 +157,7 @@ try:
     data = IdvsVgs(5, 0, 0.005, 5)
     writeData(data, "Id_vs_Vgs")
 
-    data = IdvsVds([1.0, 1.5, 1.75, 2.0, 2.5, 3.0, 3.5], 0, 0.005, 4)
+    data = IdvsVds(np.arange(1.6, 2.2, 0.05), 0, 0.5, 4)
 
     writeData(data, "Id_vs_Vds")
 
