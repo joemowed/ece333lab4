@@ -131,11 +131,11 @@ try:
     print(f"Connected to: {idn.strip()}")
 
     data = IdvsVgs(5, 0, 0.1, 3)
-    writeData(data, "test_IdvsVgs")
+    writeData(data, "Id_vs_Vgs")
 
     data = IdvsVds([1.0, 1.5, 2.0, 2.5, 3.0, 3.5], 0, 0.1, 4)
 
-    writeData(data, "test_IdvsVds")
+    writeData(data, "Id_vs_Vds")
 
 
 except pyvisa.errors.VisaIOError as e:
