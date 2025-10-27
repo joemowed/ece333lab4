@@ -7,7 +7,8 @@ import csv
 # This could be a LAN address (e.g., "TCPIP::192.168.1.100::INSTR"),
 # or a USB address (e.g., "USB0::0x10AB::0x09C4::DP8C00000::INSTR")
 VISA_ADDRESS = "USB0::0xF4EC::0x1430::SPD3XJFC8R0464::INSTR"
-ID_CURRENT_MAX = 2
+ID_CURRENT_MAX = 3.2
+ID_CURRENT_SAT = ID_CURRENT_MAX - 0.002
 
 
 def setCH1(voltage, current):
@@ -49,7 +50,7 @@ def CH2On():
 
 
 def wait():
-    time.sleep(1.2)
+    time.sleep(1.5)
 
 
 def readAll():
@@ -58,10 +59,10 @@ def readAll():
     return (CH1_volts, CH1_amps, CH2_volts, CH2_amps)
 
 
-def IdvsVgs(Vds: float, Vgs_start: float, Vgs_step_size: float, Vgs_stop: float):
+def IdvsVgs(Vds_test: float, Vgs_start: float, Vgs_step_size: float, Vgs_stop: float):
     CH1Off()
     CH2Off()
-    setCH2(Vds, ID_CURRENT_MAX)  # Vds on channel 2
+    setCH2(Vds_test, ID_CURRENT_MAX)  # Vds on channel 2
     setCH1(Vgs_start, 0.1)  # Vgs channel 1
     data = [("Vgs", "Igs", "Vds", "Ids")]
     CH1On()
@@ -69,10 +70,22 @@ def IdvsVgs(Vds: float, Vgs_start: float, Vgs_step_size: float, Vgs_stop: float)
     wait()
     wait()
     wait()
+    wait()
+    wait()
+    current_history = [0, 0]
     for Vgs_voltage in np.arange(Vgs_start, Vgs_stop, Vgs_step_size):
-        setCH1(Vgs_voltage, 0.1)
-        wait()
-        data.append(readAll())
+        Vgs_voltage = float(Vgs_voltage)
+        if (current_history[0] >= ID_CURRENT_SAT) and (
+            current_history[1] >= ID_CURRENT_SAT
+        ):
+            data.append((Vgs_voltage, "0", "0", ID_CURRENT_MAX))
+        else:
+            setCH1(Vgs_voltage, 0.1)
+            wait()
+            Vgs, Igs, Vds, Ids = readAll()
+            current_history[0] = current_history[1]
+            current_history[1] = Ids
+            data.append((Vgs, Igs, Vds, Ids))
 
     print(data)
     CH1Off()
@@ -95,12 +108,25 @@ def IdvsVds(
     wait()
     wait()
     wait()
+    wait()
+    wait()
     for Vgs_voltage in Vgs_list:
+        current_history = [0, 0]
         setCH1(Vgs_voltage, 0.1)
+        wait()
         for Vds_voltage in np.arange(Vds_start, Vds_stop, Vds_step_size):
-            setCH2(Vds_voltage, ID_CURRENT_MAX)
-            wait()
-            data.append(readAll())
+            Vds_voltage = float(Vds_voltage)
+            if (current_history[0] >= ID_CURRENT_SAT) and (
+                current_history[1] >= ID_CURRENT_SAT
+            ):
+                data.append((Vgs_voltage, "0", Vds_voltage, ID_CURRENT_MAX))
+            else:
+                setCH2(Vds_voltage, ID_CURRENT_MAX)
+                wait()
+                Vgs, Igs, Vds, Ids = readAll()
+                current_history[0] = current_history[1]
+                current_history[1] = Ids
+                data.append((Vgs, Igs, Vds, Ids))
 
     print(data)
     CH1Off()
@@ -130,10 +156,10 @@ try:
     idn = inst.query("*IDN?")
     print(f"Connected to: {idn.strip()}")
 
-    data = IdvsVgs(5, 0, 0.1, 3)
+    data = IdvsVgs(5, 0, 0.005, 5)
     writeData(data, "Id_vs_Vgs")
 
-    data = IdvsVds([1.0, 1.5, 2.0, 2.5, 3.0, 3.5], 0, 0.1, 4)
+    data = IdvsVds([1.0, 1.5, 1.75, 2.0, 2.5, 3.0, 3.5], 0, 0.005, 4)
 
     writeData(data, "Id_vs_Vds")
 
