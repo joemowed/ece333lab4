@@ -67,6 +67,8 @@ def IdvsVgs(Vds: float, Vgs_start: float, Vgs_step_size: float, Vgs_stop: float)
     CH1On()
     CH2On()
     wait()
+    wait()
+    wait()
     for Vgs_voltage in np.arange(Vgs_start, Vgs_stop, Vgs_step_size):
         setCH1(Vgs_voltage, 0.1)
         wait()
@@ -90,6 +92,8 @@ def IdvsVds(
     data = [("Vgs", "Igs", "Vds", "Ids")]
     CH1On()
     CH2On()
+    wait()
+    wait()
     wait()
     for Vgs_voltage in Vgs_list:
         setCH1(Vgs_voltage, 0.1)
