@@ -154,10 +154,10 @@ try:
     idn = inst.query("*IDN?")
     print(f"Connected to: {idn.strip()}")
 
-    data = IdvsVgs(5, 0, 0.005, 5)
-    writeData(data, "Id_vs_Vgs")
+    # data = IdvsVgs(5, 0, 0.005, 5)
+    # writeData(data, "Id_vs_Vgs")
 
-    data = IdvsVds(np.arange(1.6, 2.2, 0.05), 0, 0.5, 4)
+    data = IdvsVds(np.arange(1.6, 2.2, 0.05), 0, 0.005, 2.7)
 
     writeData(data, "Id_vs_Vds")
 
